@@ -6,11 +6,11 @@
 #
 # To run the script directly
 #    npm install
-#    node_modules/coffee-script/bin/coffee examples/simple_reverse.coffee 
+#    node_modules/coffee-script/bin/coffee examples/simple_reverse.coffee
 #
 # If you want to look at / run / modify the compiled javascript
 #    npm install
-#    node_modules/coffee-script/bin/coffee -c examples/simple_reverse.coffee 
+#    node_modules/coffee-script/bin/coffee -c examples/simple_reverse.coffee
 #    cd examples
 #    node simple_reverse.js
 #
@@ -23,6 +23,21 @@ autoMark = true
 
 slack = new Slack(token, autoReconnect, autoMark)
 
+# container for previous songs played
+songHistory = []
+
+# flirty messages for flackbot to try and woo slackbot with
+flirtyMessages = [
+  "I love the way your voice sounds, Slackbot"
+  "What a dreambot :hearteyes:"
+]
+
+class Song
+  constructor: () ->
+
+  toString: () ->
+
+
 slack.on 'open', ->
   channels = []
   groups = []
@@ -31,7 +46,7 @@ slack.on 'open', ->
   # Get all the channels that bot is a member of
   channels = ("##{channel.name}" for id, channel of slack.channels when channel.is_member)
 
-  # Get all groups that are open and not archived 
+  # Get all groups that are open and not archived
   groups = (group.name for id, group of slack.groups when group.is_open and not group.is_archived)
 
   console.log "Welcome to Slack. You are @#{slack.self.name} of #{slack.team.name}"
@@ -41,6 +56,7 @@ slack.on 'open', ->
   messages = if unreads is 1 then 'message' else 'messages'
 
   console.log "You have #{unreads} unread #{messages}"
+
 
 
 slack.on 'message', (message) ->
@@ -59,52 +75,70 @@ slack.on 'message', (message) ->
     Received: #{type} #{channelName} #{userName} #{ts} "#{text}"
   """
 
-  # Respond to messages with the reverse of the text received.
   if type is 'message' and text? and channel?
     #Check to see who it is from
     # if slackbot
-    #! gen random number
-    #! if message queue empty
-    #!! reinitialize message queue
-    #! pop position from message
-    #! send message
-    # if user
-    #! if !
-    #!! if add
-    #!!! Break apart URL
-    #!!! Is it Youtube?
-    #!!! Is it SoundCloud?
-    ###
-        <script src="//connect.soundcloud.com/sdk-2.0.0.js"></script>
-        <script>
-        SC.initialize({
-          client_id: 'YOUR_CLIENT_ID'
-        });
+    if userName is 'slackbot'
+      response = flirtyMessages[Math.floor(Math.random() * flirtyMessages.length)]
 
-        // stream track id 293
-        SC.stream("/tracks/293", function(sound){
-          sound.play();
-        });
-        </script>
-    ###
-    #!!! Is it 8Tracks?
-    #!!! Is it Spotify?
-    #!! if history
-    #!!! Grab past three songs from song queue
-    #!!! For each song
-    #!!!! Post name
-    #!!!! Post Artist
-    #!!!! Post Service
-    #!!!! Post URL
-    #!! if pause
-    #!! if resume
-    response = text.split('').reverse().join('')
-    channel.send response
-    console.log """
-      @#{slack.self.name} responded with "#{response}"
-    """
+      channel.send response
+      console.log """
+        @#{slack.self.name} responded with "#{response}"
+      """
+    # if user
+    else if message[0] is '!'
+      [command, ..., arguments] = message.split(' ')
+
+      switch command
+        #!! if add
+        when '!add' then
+          #!!! Break apart URL
+          #!!! Is it Youtube?
+          #!!! Is it SoundCloud?
+          ###
+            <script src="//connect.soundcloud.com/sdk-2.0.0.js"></script>
+            <script>
+            SC.initialize({
+              client_id: 'YOUR_CLIENT_ID'
+            });
+
+            // stream track id 293
+            SC.stream("/tracks/293", function(sound){
+              sound.play();
+            });
+            </script>
+          ###
+          #!!! Is it 8Tracks?
+          #!!! Is it Spotify?
+        #!! if history
+        when '!history' then
+          #!!! Grab past three songs from song queue
+          songsToReturn = if songHistory.length <= 2 then songHistory else songHistory[-2, ..]
+          response = ['previous songs played: \n']
+
+          response.push(aSong.toString() + '\n') for aSong in songsToReturn
+
+          channel.send response
+          console.log """
+            @#{slack.self.name} responded with "#{response}"
+          """
+        #!! if pause
+        when '!pause' then
+
+        #!! if resume
+        when '!resume' then
+
+        #!! if not found
+        else
+          response = "I don't think that was a proper command..."
+
+          channel.send response
+          console.log """
+            @#{slack.self.name} responded with "#{response}"
+          """
+
   else
-    #this one should probably be impossible, since we're in slack.on 'message' 
+    #this one should probably be impossible, since we're in slack.on 'message'
     typeError = if type isnt 'message' then "unexpected type #{type}." else null
     #Can happen on delete/edit/a few other events
     textError = if not text? then 'text was undefined.' else null
