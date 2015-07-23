@@ -33,9 +33,28 @@ flirtyMessages = [
 ]
 
 class Song
-  constructor: () ->
+  constructor: (@url) ->
+    #!!! Break apart URL
+    #!!! Is it Youtube?
+    #!!! Is it SoundCloud?
+    ###
+      <script src="//connect.soundcloud.com/sdk-2.0.0.js"></script>
+      <script>
+      SC.initialize({
+        client_id: 'YOUR_CLIENT_ID'
+      });
 
+      // stream track id 293
+      SC.stream("/tracks/293", function(sound){
+        sound.play();
+      });
+      </script>
+    ###
+    #!!! Is it 8Tracks?
+    #!!! Is it Spotify?
   toString: () ->
+
+  query: () ->
 
 
 slack.on 'open', ->
@@ -92,24 +111,22 @@ slack.on 'message', (message) ->
       switch command
         #!! if add
         when '!add' then
-          #!!! Break apart URL
-          #!!! Is it Youtube?
-          #!!! Is it SoundCloud?
-          ###
-            <script src="//connect.soundcloud.com/sdk-2.0.0.js"></script>
-            <script>
-            SC.initialize({
-              client_id: 'YOUR_CLIENT_ID'
-            });
+          try
+            newSong = new Song(arguments)
+            songHistory.push newSong
 
-            // stream track id 293
-            SC.stream("/tracks/293", function(sound){
-              sound.play();
-            });
-            </script>
-          ###
-          #!!! Is it 8Tracks?
-          #!!! Is it Spotify?
+            response = "I added a song on queue ;) /n " + newSong.toString() + " /n The position in the queue is: " + songHistory.length
+            channel.send response
+            console.log """
+              @#{slack.self.name} responded with "#{response}"
+            """
+          catch(_error)
+            response = "I am sorry, I could not add that song. /n The error code I am getting is: " + _error
+            channel.send response
+            console.log """
+              @#{slack.self.name} responded with "#{response}"
+            """
+
         #!! if history
         when '!history' then
           #!!! Grab past three songs from song queue
