@@ -26,6 +26,8 @@ slack = new Slack(token, autoReconnect, autoMark)
 # container for previous songs played
 songHistory = []
 
+pauseFlag = true
+
 # flirty messages for flackbot to try and woo slackbot with
 flirtyMessages = [
   "I love the way your voice sounds, Slackbot"
@@ -56,6 +58,28 @@ class Song
 
   query: () ->
 
+playLoop: () ->
+  setInterval(playLoop, 1000)
+  if not pauseFlag
+    # if song is over
+      if songHistory.length is not 0
+        currentSong = songHistory.shift()
+
+        # play currentSong
+
+        response = "now playing: /n " + currentSong.toString()
+        channel.send response
+        console.log """
+          @#{slack.self.name} responded with "#{response}"
+        """
+      # transition in song
+    # else if song is ending
+      # transition out song
+    # else
+      # play stream
+  # else
+    # don't play stream
+
 
 slack.on 'open', ->
   channels = []
@@ -76,7 +100,7 @@ slack.on 'open', ->
 
   console.log "You have #{unreads} unread #{messages}"
 
-
+  setInterval(playLoop(), 1000)
 
 slack.on 'message', (message) ->
   channel = slack.getChannelGroupOrDMByID(message.channel)
@@ -169,9 +193,7 @@ slack.on 'message', (message) ->
       @#{slack.self.name} could not respond. #{errors}
     """
 
-
 slack.on 'error', (error) ->
   console.error "Error: #{error}"
-
 
 slack.login()
