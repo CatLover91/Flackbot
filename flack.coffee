@@ -35,8 +35,14 @@ flirtyMessages = [
 ]
 
 class Song
-  constructor: (@url) ->
+  constructor: (@args) ->
     #!!! Break apart URL
+    url = @args[0].split '.'
+    if url[0] is 'youtube' or url[0] is 'souncloud' or url[0] is 'spotify'
+      @service = url[0]
+      @extension = url[1].split('/')[1]
+    else
+      throw 'unrecognized URL domain'
     #!!! Is it Youtube?
     #!!! Is it SoundCloud?
     ###
@@ -145,7 +151,7 @@ slack.on 'message', (message) ->
               @#{slack.self.name} responded with "#{response}"
             """
           catch(_error)
-            response = "I am sorry, I could not add that song. /n The error code I am getting is: " + _error
+            response = "I am sorry, I could not add that song. /n The error code I am getting is: `" + _error + "`"
             channel.send response
             console.log """
               @#{slack.self.name} responded with "#{response}"
@@ -155,19 +161,37 @@ slack.on 'message', (message) ->
         when '!history' then
           #!!! Grab past three songs from song queue
           songsToReturn = if songHistory.length <= 2 then songHistory else songHistory[-2, ..]
-          response = ['previous songs played: \n']
+          response = ['previous songs played:']
 
-          response.push(aSong.toString() + '\n') for aSong in songsToReturn
+          response.push aSong.toString() for aSong in songsToReturn
+
+          response.join '\n'
 
           channel.send response
           console.log """
             @#{slack.self.name} responded with "#{response}"
           """
+
         #!! if pause
         when '!pause' then
 
         #!! if resume
         when '!resume' then
+
+        when '!info' then
+          response = """
+            Here is my command list, sweetie:
+              !add <song> - adds a song to the queue
+                note: I don't really handle weird subdomains yet :x sowwy
+              !history - shows the details of the last three songs played
+              !pause - pauses the song
+              !resume - resumes the song
+            """
+
+          channel.send response
+          console.log """
+            @#{slack.self.name} responded with "#{response}"
+          """
 
         #!! if not found
         else
